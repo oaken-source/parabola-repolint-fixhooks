@@ -1,0 +1,21 @@
+#!/bin/bash
+
+pkgdir="$1"
+arch="$2"
+depend=("${@:3}")
+
+# check that we need to rebuild for linux-libre
+[ "${#depend[@]}" -eq 1 ] || exit
+[ "${depend[0]%=*}" == "linux-libre" ] || exit
+
+cd "$pkgdir"
+
+# update package cache (needs passwordless sudo set up. sorry.)
+sudo pacman -Sy
+latest="$(pacman -Sp --print-format '%v' linux-libre)"
+
+# update kernel version in PKGBUILD
+sed -i "s/^_basekernel=.*/_basekernel=$latest/" PKGBUILD || exit
+
+# queue the build
+yes | qbu q "$arch"
